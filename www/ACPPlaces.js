@@ -291,8 +291,8 @@ function acpIsValidGeofencingEvent (geofencingEvent) {
 };
 
 function acpIsValidGeofence (geofence) {
-    if (!acpIsNumber(geofence.requestId)) {
-        console.log("geofence.requestId must be of type Number.");
+    if (!acpIsString(geofence.requestId)) {
+        console.log("geofence.requestId must be of type String.");
         return false;
     }
 
