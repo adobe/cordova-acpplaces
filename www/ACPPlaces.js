@@ -104,8 +104,7 @@ var ACPPlaces = (function() {
     ACPPlaces.getNearbyPointsOfInterest = function (location, limit, success, error) {
         var FUNCTION_NAME = "getNearbyPointsOfInterest";
 
-        if (location && !acpIsObject(location)) {
-            acpPrintNotAnObject("location", FUNCTION_NAME);
+        if (location && !acpIsValidLocation(location)) {
             return;
         }
 
@@ -131,8 +130,7 @@ var ACPPlaces = (function() {
     ACPPlaces.processGeofenceEvent = function (geofencingEvent, success, error) {
         var FUNCTION_NAME = "processGeofenceEvent";
 
-        if (geofencingEvent && !acpIsObject(geofencingEvent)) {
-            acpPrintNotAnObject("geofencingEvent", FUNCTION_NAME);
+        if (geofencingEvent && !acpIsValidGeofencingEvent(geofencingEvent)) {
             return;
         }
 
@@ -152,8 +150,7 @@ var ACPPlaces = (function() {
     ACPPlaces.processGeofence = function (geofence, transitionType, success, error) {
         var FUNCTION_NAME = "processGeofence";
 
-        if (geofence && !acpIsObject(geofence)) {
-            acpPrintNotAnObject("geofence", FUNCTION_NAME);
+        if (geofence && !acpIsValidGeofence(geofence)) {
             return;
         }
 
@@ -179,13 +176,12 @@ var ACPPlaces = (function() {
     ACPPlaces.processRegionEvent = function (region, eventType, success, error) {
         var FUNCTION_NAME = "processRegionEvent";
 
-        if (region && !acpIsObject(region)) {
-            acpPrintNotAnObject("region", FUNCTION_NAME);
+        if (region && !isValidRegion(region)) {
             return;
         }
 
-        if (eventType && !acpIsObject(eventType)) {
-            acpPrintNotAnObject("eventType", FUNCTION_NAME);
+        if (eventType && !acpIsNumber(eventType)) {
+            acpPrintNotANumber("eventType", FUNCTION_NAME);
             return;
         }
 
@@ -206,8 +202,8 @@ var ACPPlaces = (function() {
     ACPPlaces.setAuthorizationStatus = function (status, success, error) {
         var FUNCTION_NAME = "setAuthorizationStatus";
 
-        if (status && !acpIsObject(status)) {
-            acpPrintNotAnObject("status", FUNCTION_NAME);
+        if (status && !acpIsNumber(status)) {
+            acpPrintNotANumber("status", FUNCTION_NAME);
             return;
         }
 
@@ -230,6 +226,14 @@ var ACPPlaces = (function() {
 // ===========================================================================
 // helper functions
 // ===========================================================================
+function acpIsString = (value) {
+    return typeof value === 'string' || value instanceof String;
+};
+
+function acpPrintNotAString = (paramName, functionName) {
+    console.log("Ignoring call to '" + functionName + "'. The '" + paramName + "' parameter is required to be a String.");
+};
+
 function isFunction (value) {
     return typeof value === 'function';
 }
@@ -238,20 +242,112 @@ function printNotAFunction(paramName, functionName) {
     console.log("Ignoring call to '" + functionName + "'. The '" + paramName + "' parameter is required to be a function.");
 }
 
-function acpIsObject = function (value) {
+function acpIsObject (value) {
     return value && typeof value === 'object' && value.constructor === Object;
 };
 
-function acpPrintNotAnObject = function (paramName, functionName) {
+function acpPrintNotAnObject (paramName, functionName) {
     console.log("Ignoring call to '" + functionName + "'. The '" + paramName + "' parameter is required to be an Object.");
 };
 
-function acpIsNumber = function (value) {
+function acpIsNumber (value) {
     return typeof value === 'number' && isFinite(value);
 };
 
-function acpPrintNotANumber = function (paramName, functionName) {
+function acpPrintNotANumber (paramName, functionName) {
     console.log("Ignoring call to '" + functionName + "'. The '" + paramName + "' parameter is required to be a Number.");
+};
+
+function acpIsValidLocation (location) {
+    if (!acpIsNumber(location.latitude)) {
+        console.log("location.latitude must be of type Number.");
+        return false;
+    }
+
+    if (!acpIsNumber(location.longitude)) {
+        console.log("location.longitude must be of type Number.");
+        return false;
+    }
+
+    return true;
+};
+
+function acpIsValidGeofencingEvent (geofencingEvent) {
+    if (!acpIsNumber(geofencingEvent.transition)) {
+        console.log("geofencingEvent.transition must be of type Number.");
+        return false;
+    }
+
+    if (!acpIsObject(geofencingEvent.triggeringGeofences)) {
+        console.log("geofencingEvent.triggeringGeofences must be of type Object.");
+        return false;
+    }
+
+    if (!acpIsValidLocation(geofencingEvent.location)) {
+        return false;
+    }
+
+    return true;
+};
+
+function acpIsValidGeofence (geofence) {
+    if (!acpIsNumber(geofence.requestId)) {
+        console.log("geofence.requestId must be of type Number.");
+        return false;
+    }
+
+    if (!acpIsValidCircularRegion(geofence.circularRegion)) {
+        return false;
+    }
+
+    if (!acpIsNumber(geofence.expirationDuration)) {
+        console.log("geofence.expirationDuration must be of type Number.");
+        return false;
+    }
+
+    if (!acpIsNumber(geofence.transitionType)) {
+        console.log("geofence.transitionType must be of type Number.");
+        return false;
+    }
+
+    return true;
+};
+
+function acpIsValidCircularRegion (circularRegion) {
+    if (!acpIsNumber(circularRegion.latitude)) {
+        console.log("circularRegion.latitude must be of type Number.");
+        return false;
+    }
+
+    if (!acpIsNumber(circularRegion.longitude)) {
+        console.log("circularRegion.longitude must be of type Number.");
+        return false;
+    }
+
+    if (!acpIsNumber(circularRegion.radius)) {
+        console.log("circularRegion.radius must be of type Number.");
+        return false;
+    }
+
+    return true;
+};
+
+function acpIsValidRegion (region) {
+    if (!acpIsValidLocation(region.center)) {
+        return false;
+    }
+
+    if (!acpIsNumber(region.radius)) {
+        console.log("region.radius must be of type Number.");
+        return false;
+    }
+
+    if (!acpIsString(region.identifier)) {
+        console.log("region.identifier must be of type String.");
+        return false;
+    }
+
+    return true;
 };
 
 module.exports = ACPPlaces;
