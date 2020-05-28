@@ -25,6 +25,9 @@ import com.adobe.marketing.mobile.Places;
 import com.adobe.marketing.mobile.PlacesAuthorizationStatus;
 import com.adobe.marketing.mobile.PlacesPOI;
 import com.adobe.marketing.mobile.PlacesRequestError;
+import java.util.List;
+import android.location.Location;
+import com.google.android.gms.location.Geofence;
 
 /**
  * This class echoes a string called from JavaScript.
