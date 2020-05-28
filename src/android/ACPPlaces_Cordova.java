@@ -34,8 +34,17 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
 
-        if ("extensionVersion".equals(action)) {
+        if ("clear".equals(action)) {
+            clear(callbackContext);
+            return true;
+        } else if ("extensionVersion".equals((action))) {
             extensionVersion(callbackContext);
+            return true;
+        } else if ("getCurrentPointsOfInterest".equals((action))) {
+            getCurrentPointsOfInterest(callbackContext);
+            return true;
+        }else if ("getLastKnownLocation".equals((action))) {
+            getLastKnownLocation(callbackContext);
             return true;
         } else if ("getNearbyPointsOfInterest".equals((action))) {
             getNearbyPointsOfInterest(args, callbackContext);
@@ -46,21 +55,25 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
         } else if ("processGeofence".equals((action))) {
             processGeofence(args, callbackContext);
             return true;
-        } else if ("getCurrentPointsOfInterest".equals((action))) {
-            getCurrentPointsOfInterest(callbackContext);
+        } else if ("processRegionEvent".equals((action))) {
+            processRegionEvent(args, callbackContext);
             return true;
-        } else if ("getLastKnownLocation".equals((action))) {
-            getLastKnownLocation(callbackContext);
-            return true;
-        } else if ("clear".equals((action))) {
-            clear(callbackContext);
-            return true;
-        }else if ("setAuthorizationStatus".equals((action))) {
+        } else if ("setAuthorizationStatus".equals((action))) {
             setAuthorizationStatus(args, callbackContext);
             return true;
         }
 
         return false;
+    }
+
+    private void clear(final CallbackContext callbackContext) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Places.clear();
+                callbackContext.success();
+            }
+        });
     }
 
     private void extensionVersion(final CallbackContext callbackContext) {
@@ -77,6 +90,42 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
         });
     }
 
+    private void getCurrentPointsOfInterest(final CallbackContext callbackContext) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Places.getCurrentPointsOfInterest(new AdobeCallback<List<PlacesPOI>>() {
+                    @Override
+                    public void call(List<PlacesPOI> pois) {
+                        String placesPoiString = "";
+                        if (pois.isEmpty()) {
+                            placesPoiString = "[]";
+                        } else {
+                            for (PlacesPOI poi : pois) {
+                                placesPoiString = placesPoiString.concat(String.format("[POI: %s] ", poi.toString()));
+                            }
+                        }
+                        callbackContext.success(placesPoiString);
+                    }
+                });
+            }
+        });
+    }
+
+    private void getLastKnownLocation(final CallbackContext callbackContext) {
+        cordova.getThreadPool().execute(new Runnable() {
+            @Override
+            public void run() {
+                Places.getLastKnownLocation(new AdobeCallback<Location>() {
+                    @Override
+                    public void call(Location location) {
+                        callbackContext.success(location.toString());
+                    }
+                });
+            }
+        });
+    }
+
     private void getNearbyPointsOfInterest(final JSONArray args, final CallbackContext callbackContext) {
         cordova.getThreadPool().execute(new Runnable() {
             @Override
@@ -88,7 +137,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 Location location;
                 int limit;
                 try {
-                    location = args.getString(0);
+                    location = (Location)args.getJSONObject(0);
                     limit = args.getInt(1);
                 } catch (JSONException e) {
                     callbackContext.error("Error while parsing arguments, Error " + e.getLocalizedMessage());
@@ -159,47 +208,11 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
         });
     }
 
-    private void getCurrentPointsOfInterest(final CallbackContext callbackContext) {
+     private void processRegionEvent(final CallbackContext callbackContext) {
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
-                Places.getCurrentPointsOfInterest(new AdobeCallback<List<PlacesPOI>>() {
-                    @Override
-                    public void call(List<PlacesPOI> pois) {
-                        String placesPoiString = "";
-                        if (pois.isEmpty()) {
-                            placesPoiString = "[]";
-                        } else {
-                            for (PlacesPOI poi : pois) {
-                                placesPoiString = placesPoiString.concat(String.format("[POI: %s] ", poi.toString()));
-                            }
-                        }
-                        callbackContext.success(placesPoiString);
-                    }
-                });
-            }
-        });
-    }
-
-    private void getLastKnownLocation(final CallbackContext callbackContext) {
-        cordova.getThreadPool().execute(new Runnable() {
-            @Override
-            public void run() {
-                Places.getLastKnownLocation(new AdobeCallback<Location>() {
-                    @Override
-                    public void call(Location location) {
-                        callbackContext.success(location.toString());
-                    }
-                });
-            }
-        });
-    }
-
-    private void clear(final CallbackContext callbackContext) {
-        cordova.getThreadPool().execute(new Runnable() {
-            @Override
-            public void run() {
-                Places.clear();
+                // this method is not implemented in Android
                 callbackContext.success();
             }
         });

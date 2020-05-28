@@ -13,9 +13,43 @@ var ACPPlaces = (function() {
     var exec = require('cordova/exec');
 	var ACPPlaces = (typeof exports !== 'undefined') && exports || {};
 	var PLUGIN_NAME = "ACPPlacesCordova";
+
+    // ===========================================================================
+    // public enums
+    // ===========================================================================
+    // ACPPlacesRequestError
+    ACPPlaces.ACPPlacesRequestErrorNone = 0;
+    ACPPlaces.ACPPlacesRequestErrorConnectivityError = 1;
+    ACPPlaces.ACPPlacesRequestErrorServerResponseError = 2;
+    ACPPlaces.ACPPlacesRequestErrorInvalidLatLongError = 3;
+    ACPPlaces.ACPPlacesRequestErrorConfigurationError = 4;
+    ACPPlaces.ACPPlacesRequestErrorQueryServiceUnavailable = 5;
+    ACPPlaces.ACPPlacesRequestErrorUnknownError = 6;
+
+    // ACPRegionEventType
+    ACPPlaces.ACPRegionEventTypeNone = 0;
+    ACPPlaces.ACPRegionEventTypeEntry = 1;
+    ACPPlaces.ACPRegionEventTypeExit = 2;
 	// ===========================================================================
 	// public APIs
 	// ===========================================================================
+
+    // Clears out the client-side data for Places in shared state, local storage, and in-memory.
+    ACPPlaces.clear = function (success, error) {
+        var FUNCTION_NAME = "clear";
+
+        if (success && !isFunction(success)) {
+            printNotAFunction("success", FUNCTION_NAME);
+            return;
+        }
+
+        if (error && !isFunction(error)) {
+            printNotAFunction("error", FUNCTION_NAME);
+            return;
+        }
+
+        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
+    };
 
     // Gets the current Places extension version.
     ACPPlaces.extensionVersion = function (success, error) {
@@ -31,7 +65,39 @@ var ACPPlaces = (function() {
             return;
         }
 
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
+    };
+
+    // Returns all Points of Interest (POI) in which the device is currently known to be within.
+    ACPPlaces.getCurrentPointsOfInterest = function (success, error) {
+        var FUNCTION_NAME = "getCurrentPointsOfInterest";
+
+        if (success && !isFunction(success)) {
+            printNotAFunction("success", FUNCTION_NAME);
+            return;
+        }
+
+        if (error && !isFunction(error)) {
+            printNotAFunction("error", FUNCTION_NAME);
+            return;
+        }
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
+    };
+
+    // Returns the last latitude and longitude provided to the ACPPlaces Extension.
+    ACPPlaces.getLastKnownLocation = function (success, error) {
+        var FUNCTION_NAME = "getLastKnownLocation";
+
+        if (success && !isFunction(success)) {
+            printNotAFunction("success", FUNCTION_NAME);
+            return;
+        }
+
+        if (error && !isFunction(error)) {
+            printNotAFunction("error", FUNCTION_NAME);
+            return;
+        }
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
     };
 
     // Requests a list of nearby Points of Interest (POI).
@@ -58,10 +124,10 @@ var ACPPlaces = (function() {
             return;
         }
 
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [location, limit]);
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [location, limit]);
     };
 
-    // Pass a GeofencingEvent to be processed by the SDK.
+    // Android only. Pass a GeofencingEvent to be processed by the SDK.
     ACPPlaces.processGeofenceEvent = function (geofencingEvent, success, error) {
         var FUNCTION_NAME = "processGeofenceEvent";
 
@@ -79,10 +145,10 @@ var ACPPlaces = (function() {
             printNotAFunction("error", FUNCTION_NAME);
             return;
         }
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [geofencingEvent]);
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [geofencingEvent]);
     };
 
-    // Pass a Geofence and transition type to be processed by the SDK.
+    // Android only. Pass a Geofence and transition type to be processed by the SDK.
     ACPPlaces.processGeofence = function (geofence, transitionType, success, error) {
         var FUNCTION_NAME = "processGeofence";
 
@@ -106,44 +172,22 @@ var ACPPlaces = (function() {
             return;
         }
 
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [geofence, transitionType]);
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [geofence, transitionType]);
     };
 
-    // Returns all Points of Interest (POI) in which the device is currently known to be within.
-    ACPPlaces.getCurrentPointsOfInterest = function (success, error) {
-        var FUNCTION_NAME = "getCurrentPointsOfInterest";
+    // iOS only. Passes a region and event type to be processed by the SDK.
+    ACPPlaces.processRegionEvent = function (region, eventType, success, error) {
+        var FUNCTION_NAME = "processRegionEvent";
 
-        if (success && !isFunction(success)) {
-            printNotAFunction("success", FUNCTION_NAME);
+        if (region && !acpIsObject(region)) {
+            acpPrintNotAnObject("region", FUNCTION_NAME);
             return;
         }
 
-        if (error && !isFunction(error)) {
-            printNotAFunction("error", FUNCTION_NAME);
+        if (eventType && !acpIsObject(eventType)) {
+            acpPrintNotAnObject("eventType", FUNCTION_NAME);
             return;
         }
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
-    };
-
-    // Returns the last latitude and longitude provided to the ACPPlaces Extension.
-    ACPPlaces.getLastKnownLocation = function (success, error) {
-        var FUNCTION_NAME = "getLastKnownLocation";
-
-        if (success && !isFunction(success)) {
-            printNotAFunction("success", FUNCTION_NAME);
-            return;
-        }
-
-        if (error && !isFunction(error)) {
-            printNotAFunction("error", FUNCTION_NAME);
-            return;
-        }
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
-    };
-
-    // Clears out the client-side data for Places in shared state, local storage, and in-memory.
-    ACPPlaces.clear = function (success, error) {
-        var FUNCTION_NAME = "clear";
 
         if (success && !isFunction(success)) {
             printNotAFunction("success", FUNCTION_NAME);
@@ -155,7 +199,7 @@ var ACPPlaces = (function() {
             return;
         }
 
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, []);
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [region, eventType]);
     };
 
     // Sets the authorization status in the Places extension.
@@ -177,7 +221,7 @@ var ACPPlaces = (function() {
             return;
         }
 
-        exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [status]);
+        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [status]);
     };
 
 	return ACPPlaces;
