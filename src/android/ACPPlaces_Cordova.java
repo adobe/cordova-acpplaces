@@ -59,7 +59,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
             processGeofence(args, callbackContext);
             return true;
         } else if ("processRegionEvent".equals((action))) {
-            processRegionEvent(args, callbackContext);
+            processRegionEvent(callbackContext);
             return true;
         } else if ("setAuthorizationStatus".equals((action))) {
             setAuthorizationStatus(args, callbackContext);
