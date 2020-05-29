@@ -27,7 +27,6 @@ import com.adobe.marketing.mobile.PlacesAuthorizationStatus;
 import com.adobe.marketing.mobile.PlacesPOI;
 import com.adobe.marketing.mobile.PlacesRequestError;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 import java.util.HashMap;
@@ -199,6 +198,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 // TODO: see what kind of intent we get from native js
                 geofencingEvent = null; // should be converted from intent (GeofencingEvent.fromIntent(intent);)
                 Places.processGeofenceEvent(geofencingEvent);
+                callbackContext.success();
             }
         });
     }
@@ -220,13 +220,20 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                     callbackContext.error("Error while parsing argument, Error " + e.getLocalizedMessage());
                     return;
                 }
-                ArrayList<String> circularRegion = (ArrayList)geofenceMap.get("circularRegion");
-                double latitude = Double.parseDouble(circularRegion.get(0));
-                double longitude = Double.parseDouble(circularRegion.get(1));
-                float radius = Float.parseFloat(circularRegion.get(2));
+                String requestId = (String)geofenceMap.get("requestId");
+                HashMap<String, String> circularRegion = getCircularRegionData((String)geofenceMap.get("circularRegion"));
+                double latitude = Double.parseDouble(circularRegion.get("latitude"));
+                double longitude = Double.parseDouble(circularRegion.get("longitude"));
+                float radius = Float.parseFloat(circularRegion.get("radius"));
                 long expirationDuration = Long.parseLong((String)geofenceMap.get("expirationDuration"));
-                Geofence geofence = new Geofence.Builder().setCircularRegion(latitude, longitude, radius).setExpirationDuration(expirationDuration).setTransitionTypes(transitionType).build();
+                Geofence geofence = new Geofence.Builder()
+                        .setCircularRegion(latitude, longitude, radius)
+                        .setExpirationDuration(expirationDuration)
+                        .setTransitionTypes(transitionType)
+                        .setRequestId(requestId)
+                        .build();
                 Places.processGeofence(geofence, transitionType);
+                callbackContext.success();
             }
         });
     }
@@ -258,6 +265,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 }
 
                 Places.setAuthorizationStatus(status);
+                callbackContext.success();
             }
         });
     }
@@ -311,5 +319,17 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
         } else {
             return null;
         }
+    }
+
+    private HashMap<String, String> getCircularRegionData(final String regionData) {
+        String regionDataString = regionData.replace("{","").replace("}","").replace("\"","");
+        String[] dataPairs = regionDataString.split(",");
+        HashMap<String, String> regionDataMap = new HashMap<>();
+        for(int i=0; i < dataPairs.length; i++){
+            String pair = dataPairs[i];
+            String[] keys = pair.split(":");
+            regionDataMap.put(keys[0], keys[1]);
+        }
+        return regionDataMap;
     }
 }
