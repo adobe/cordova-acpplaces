@@ -11,6 +11,7 @@
 
 package com.adobe.marketing.mobile.cordova;
 
+import android.content.Intent;
 import android.os.Handler;
 import android.os.Looper;
 
@@ -25,9 +26,14 @@ import com.adobe.marketing.mobile.Places;
 import com.adobe.marketing.mobile.PlacesAuthorizationStatus;
 import com.adobe.marketing.mobile.PlacesPOI;
 import com.adobe.marketing.mobile.PlacesRequestError;
+
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
+import java.util.HashMap;
 import android.location.Location;
 import com.google.android.gms.location.Geofence;
+import com.google.android.gms.location.GeofencingEvent;
 
 /**
  * This class echoes a string called from JavaScript.
@@ -137,15 +143,19 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                     callbackContext.error("Invalid argument count, expected 2 (location and limit).");
                     return;
                 }
-                Location location;
+                Location location = new Location("");
+                HashMap<String, String> locationMap;
                 int limit;
                 try {
-                    location = (Location)args.getJSONObject(0);
+                    locationMap = getStringMapFromJSON(args.getJSONObject(0));
                     limit = args.getInt(1);
                 } catch (JSONException e) {
                     callbackContext.error("Error while parsing arguments, Error " + e.getLocalizedMessage());
                     return;
                 }
+
+                location.setLatitude(Double.parseDouble(locationMap.get("latitude")));
+                location.setLongitude(Double.parseDouble(locationMap.get("longitude")));
                 Places.getNearbyPointsOfInterest(location, limit, new AdobeCallback<List<PlacesPOI>>() {
                     @Override
                     public void call(List<PlacesPOI> pois) {
@@ -178,12 +188,16 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                     return;
                 }
                 GeofencingEvent geofencingEvent;
+                HashMap<String, Object> geofenceEventMap;
                 try {
-                    geofencingEvent = (GeofencingEvent)args.getJSONObject(0);
+                    geofenceEventMap = getObjectMapFromJSON(args.getJSONObject(0));
                 } catch (JSONException e) {
                     callbackContext.error("Error while parsing argument, Error " + e.getLocalizedMessage());
                     return;
                 }
+
+                // TODO: see what kind of intent we get from native js
+                geofencingEvent = null; // should be converted from intent (GeofencingEvent.fromIntent(intent);)
                 Places.processGeofenceEvent(geofencingEvent);
             }
         });
@@ -197,15 +211,21 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                     callbackContext.error("Invalid argument count, expected 2 (geofence, transition type).");
                     return;
                 }
-                Geofence geofence;
                 int transitionType;
+                HashMap<String, Object> geofenceMap;
                 try {
-                    geofence = (Geofence)args.getJSONObject(0);
+                    geofenceMap = getObjectMapFromJSON(args.getJSONObject(0));
                     transitionType = args.getInt(1);
                 } catch (JSONException e) {
                     callbackContext.error("Error while parsing argument, Error " + e.getLocalizedMessage());
                     return;
                 }
+                ArrayList<String> circularRegion = (ArrayList)geofenceMap.get("circularRegion");
+                double latitude = Double.parseDouble(circularRegion.get(0));
+                double longitude = Double.parseDouble(circularRegion.get(1));
+                float radius = Float.parseFloat(circularRegion.get(2));
+                long expirationDuration = Long.parseLong((String)geofenceMap.get("expirationDuration"));
+                Geofence geofence = new Geofence.Builder().setCircularRegion(latitude, longitude, radius).setExpirationDuration(expirationDuration).setTransitionTypes(transitionType).build();
                 Places.processGeofence(geofence, transitionType);
             }
         });
@@ -231,13 +251,65 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 }
                 PlacesAuthorizationStatus status;
                 try {
-                    status = (PlacesAuthorizationStatus)args.getJSONObject(0);
+                    status = getAuthorizationStatus(args.getInt(0));
                 } catch (JSONException e) {
                     callbackContext.error("Error while parsing argument, Error " + e.getLocalizedMessage());
                     return;
                 }
+
                 Places.setAuthorizationStatus(status);
             }
         });
+    }
+
+    // ===============================================================
+    // Helpers
+    // ===============================================================
+    private HashMap<String, String> getStringMapFromJSON(JSONObject data) {
+        HashMap<String, String> map = new HashMap<String, String>();
+        @SuppressWarnings("rawtypes")
+        Iterator it = data.keys();
+        while (it.hasNext()) {
+            String n = (String) it.next();
+            try {
+                map.put(n, data.getString(n));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return map;
+    }
+
+    private HashMap<String, Object> getObjectMapFromJSON(JSONObject data) {
+        HashMap<String, Object> map = new HashMap<String, Object>();
+        @SuppressWarnings("rawtypes")
+        Iterator it = data.keys();
+        while (it.hasNext()) {
+            String n = (String) it.next();
+            try {
+                map.put(n, data.getString(n));
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return map;
+    }
+
+    private PlacesAuthorizationStatus getAuthorizationStatus(final int status){
+        if(status == 0) {
+            return  PlacesAuthorizationStatus.DENIED;
+        } else if(status == 1) {
+            return PlacesAuthorizationStatus.ALWAYS;
+        } else if(status == 2) {
+            return PlacesAuthorizationStatus.UNKNOWN;
+        } else if(status == 3) {
+            return PlacesAuthorizationStatus.RESTRICTED;
+        } else if(status == 4) {
+            return PlacesAuthorizationStatus.WHEN_IN_USE;
+        } else {
+            return null;
+        }
     }
 }
