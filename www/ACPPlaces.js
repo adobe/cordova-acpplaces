@@ -176,7 +176,7 @@ var ACPPlaces = (function() {
     ACPPlaces.processRegionEvent = function (region, eventType, success, error) {
         var FUNCTION_NAME = "processRegionEvent";
 
-        if (region && !isValidRegion(region)) {
+        if (region && !acpIsValidRegion(region)) {
             return;
         }
 
@@ -302,11 +302,6 @@ function acpIsValidGeofence (geofence) {
 
     if (!acpIsNumber(geofence.expirationDuration)) {
         console.log("geofence.expirationDuration must be of type Number.");
-        return false;
-    }
-
-    if (!acpIsNumber(geofence.transitionType)) {
-        console.log("geofence.transitionType must be of type Number.");
         return false;
     }
 
