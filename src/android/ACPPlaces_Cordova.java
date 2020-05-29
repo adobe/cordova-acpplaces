@@ -110,7 +110,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                             placesPoiString = "[]";
                         } else {
                             for (PlacesPOI poi : pois) {
-                                placesPoiString = placesPoiString.concat(String.format("[POI: %s] ", poi.toString()));
+                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %d, Longitude: %d, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
                             }
                         }
                         callbackContext.success(placesPoiString);
@@ -127,7 +127,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 Places.getLastKnownLocation(new AdobeCallback<Location>() {
                     @Override
                     public void call(Location location) {
-                        callbackContext.success(location.toString());
+                        callbackContext.success("latitude: " + location.getLatitude() + " longitude: " + location.getLongitude());
                     }
                 });
             }
@@ -163,7 +163,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                             placesPoiString = "[]";
                         } else {
                             for (PlacesPOI poi : pois) {
-                                placesPoiString = placesPoiString.concat(String.format("[POI: %s] ", poi.toString()));
+                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %d, Longitude: %d, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
                             }
                         }
                         callbackContext.success(placesPoiString);
