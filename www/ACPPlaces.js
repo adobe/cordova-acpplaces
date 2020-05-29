@@ -226,11 +226,11 @@ var ACPPlaces = (function() {
 // ===========================================================================
 // helper functions
 // ===========================================================================
-function acpIsString = (value) {
+function acpIsString (value) {
     return typeof value === 'string' || value instanceof String;
 };
 
-function acpPrintNotAString = (paramName, functionName) {
+function acpPrintNotAString (paramName, functionName) {
     console.log("Ignoring call to '" + functionName + "'. The '" + paramName + "' parameter is required to be a String.");
 };
 
@@ -238,7 +238,7 @@ function isFunction (value) {
     return typeof value === 'function';
 }
 
-function printNotAFunction(paramName, functionName) {
+function printNotAFunction (paramName, functionName) {
     console.log("Ignoring call to '" + functionName + "'. The '" + paramName + "' parameter is required to be a function.");
 }
 
