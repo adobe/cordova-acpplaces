@@ -110,7 +110,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                             placesPoiString = "[]";
                         } else {
                             for (PlacesPOI poi : pois) {
-                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %d, Longitude: %d, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
+                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %f, Longitude: %f, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
                             }
                         }
                         callbackContext.success(placesPoiString);
@@ -163,7 +163,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                             placesPoiString = "[]";
                         } else {
                             for (PlacesPOI poi : pois) {
-                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %d, Longitude: %d, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
+                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %f, Longitude: %f, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
                             }
                         }
                         callbackContext.success(placesPoiString);
@@ -226,7 +226,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 double longitude = Double.parseDouble(circularRegion.get("longitude"));
                 float radius = Float.parseFloat(circularRegion.get("radius"));
                 long expirationDuration = Long.parseLong((String)geofenceMap.get("expirationDuration"));
-                Geofence geofence = new Geofence.Builder()
+                final Geofence geofence = new Geofence.Builder()
                         .setCircularRegion(latitude, longitude, radius)
                         .setExpirationDuration(expirationDuration)
                         .setTransitionTypes(transitionType)
