@@ -105,15 +105,25 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 Places.getCurrentPointsOfInterest(new AdobeCallback<List<PlacesPOI>>() {
                     @Override
                     public void call(List<PlacesPOI> pois) {
-                        String placesPoiString = "";
-                        if (pois.isEmpty()) {
-                            placesPoiString = "[]";
-                        } else {
+                        int index = 0;
+                        JSONArray jsonArray = new JSONArray();
+                        JSONObject json;
+                        if (!pois.isEmpty()) {
                             for (PlacesPOI poi : pois) {
-                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %f, Longitude: %f, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
+                                try {
+                                    json = new JSONObject();
+                                    json.put("POI", poi.getName());
+                                    json.put("Latitude", poi.getLatitude());
+                                    json.put("Longitude", poi.getLongitude());
+                                    json.put("Identifier", poi.getIdentifier());
+                                    jsonArray.put(index, json);
+                                    index++;
+                                } catch (JSONException e){
+                                    e.printStackTrace();
+                                }
                             }
                         }
-                        callbackContext.success(placesPoiString);
+                        callbackContext.success(jsonArray.toString());
                     }
                 });
             }
@@ -158,15 +168,25 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 Places.getNearbyPointsOfInterest(location, limit, new AdobeCallback<List<PlacesPOI>>() {
                     @Override
                     public void call(List<PlacesPOI> pois) {
-                        String placesPoiString = "";
-                        if (pois.isEmpty()) {
-                            placesPoiString = "[]";
-                        } else {
+                        int index = 0;
+                        JSONArray jsonArray = new JSONArray();
+                        JSONObject json;
+                        if (!pois.isEmpty()) {
                             for (PlacesPOI poi : pois) {
-                                placesPoiString = placesPoiString.concat(String.format("[POI: %s, Latitude: %f, Longitude: %f, Identifier: %s] ", poi.getName(), poi.getLatitude(), poi.getLongitude(), poi.getIdentifier()));
+                                try {
+                                    json = new JSONObject();
+                                    json.put("POI", poi.getName());
+                                    json.put("Latitude", poi.getLatitude());
+                                    json.put("Longitude", poi.getLongitude());
+                                    json.put("Identifier", poi.getIdentifier());
+                                    jsonArray.put(index, json);
+                                    index++;
+                                } catch (JSONException e){
+                                    e.printStackTrace();
+                                }
                             }
                         }
-                        callbackContext.success(placesPoiString);
+                        callbackContext.success(jsonArray.toString());
                     }
                 }, new AdobeCallback<PlacesRequestError>() {
                     @Override
@@ -182,22 +202,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
         cordova.getThreadPool().execute(new Runnable() {
             @Override
             public void run() {
-                if (args == null || args.length() != 1) {
-                    callbackContext.error("Invalid argument count, expected 1 (geofence event).");
-                    return;
-                }
-                GeofencingEvent geofencingEvent;
-                HashMap<String, Object> geofenceEventMap;
-                try {
-                    geofenceEventMap = getObjectMapFromJSON(args.getJSONObject(0));
-                } catch (JSONException e) {
-                    callbackContext.error("Error while parsing argument, Error " + e.getLocalizedMessage());
-                    return;
-                }
-
-                // TODO: see what kind of intent we get from native js
-                geofencingEvent = null; // should be converted from intent (GeofencingEvent.fromIntent(intent);)
-                Places.processGeofenceEvent(geofencingEvent);
+                // this method is not implemented. please use processGeofence.
                 callbackContext.success();
             }
         });
