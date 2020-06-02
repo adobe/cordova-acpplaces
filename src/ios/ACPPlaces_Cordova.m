@@ -35,7 +35,7 @@
 {
     [self.commandDelegate runInBackground:^{
         [ACPPlaces clear];
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:extensionVersion];
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
@@ -59,19 +59,26 @@
 - (void)getCurrentPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        CLLocation *currentLocation = [command.arguments objectAtIndex:0];
-        NSUInteger limit = [command.arguments objectAtIndex:1];
-        [ACPPlaces getNearbyPointsOfInterest: currentLocation limit: limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable nearbyPoi) {
-            NSString* placesPoiString = @"[]";
-            for (ACPPlacesPoi *currentPoi in nearbyPoi) {
-                placesPoiString = [placesPoiString stringByAppendingFormat:@"[POI: %@]", currentPoi];
+        NSDictionary* retrievedPois = [[NSMutableDictionary alloc]init];
+        CLLocation* currentLocation = [self getCommandArg:objectAtIndex:0];
+        NSUInteger limit = [self getCommandArg:command.arguments objectAtIndex:1];
+        NSString* currentPoisString = @"[]";
+        [ACPPlaces getNearbyPointsOfInterest: currentLocation limit: limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable currentPoi) {
+            if(!nearbyPoi || !nearbyPoi.count) {
+                for (ACPPlacesPoi* currentPoi in nearbyPoi) {
+                    [retrievedPois setValue:currentPoi.name forKey:@"POI"];
+                    [retrievedPois setValue:currentPoi.latitude forKey:@"Latitude"];
+                    [retrievedPois setValue:currentPoi.longitude forKey:@"Longitude"];
+                    [retrievedPois setValue:currentPoi.identifier forKey:@"Identifier"];
+                }
+                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPois options:NSJSONWritingPrettyPrinted error:&err];
+                currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
             }
         }
         errorCallback:^(ACPPlacesRequestError error) {
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Error dispatching event: %@", error.localizedDescription ?: @"unknown error"]] callbackId:command.callbackId];
+            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Error dispatching event: %@", error ?: @"unknown error"]] callbackId:command.callbackId];
         }];
-
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:placesPoiString];
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
@@ -79,11 +86,17 @@
 - (void)getLastKnownLocation:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        NSString *locationString = @"";
+        CLLocation* retrievedLocation;
         [ACPPlaces getLastKnownLocation: ^(CLLocation * _Nullable lastLocation) {
-            locationString = lastLocation;
+            retrievedLocation = lastLocation;
         }];
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:locationString];
+        NSString* latitude = [[NSString alloc] 
+                  initWithFormat:@"%g", 
+                  retrievedLocation.coordinate.latitude];
+        NSString* longitude = [[NSString alloc] 
+                  initWithFormat:@"%g", 
+                  retrievedLocation.coordinate.longitude];
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"latitude: : %@ longitude: %@", latitud, longitude]];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
@@ -91,19 +104,27 @@
 - (void)getNearbyPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        CLLocation *currentLocation = [command.arguments objectAtIndex:0];
-        NSUInteger limit = [command.arguments objectAtIndex:1];
+        NSDictionary* retrievedPois = [[NSMutableDictionary alloc]init];
+        CLLocation* currentLocation = [self getCommandArg:objectAtIndex:0];
+        NSUInteger limit = [self getCommandArg:command.arguments objectAtIndex:1];
+        NSString* currentPoisString = @"[]";
         [ACPPlaces getNearbyPointsOfInterest: currentLocation limit: limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable nearbyPoi) {
-            NSString* placesPoiString = @"[]";
-            for (ACPPlacesPoi *currentPoi in nearbyPoi) {
-                placesPoiString = [placesPoiString stringByAppendingFormat:@"[POI: %@]", currentPoi];
+            if(!nearbyPoi || !nearbyPoi.count) {
+                for (ACPPlacesPoi* currentPoi in nearbyPoi) {
+                    [retrievedPois setValue:nearbyPoi.name forKey:@"POI"];
+                    [retrievedPois setValue:nearbyPoi.latitude forKey:@"Latitude"];
+                    [retrievedPois setValue:nearbyPoi.longitude forKey:@"Longitude"];
+                    [retrievedPois setValue:nearbyPoi.identifier forKey:@"Identifier"];
+                }
+                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPois options:NSJSONWritingPrettyPrinted error:&err];
+                currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
             }
         }
         errorCallback:^(ACPPlacesRequestError error) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Error dispatching event: %@", error.localizedDescription ?: @"unknown error"]] callbackId:command.callbackId];
         }];
 
-        CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:placesPoiString];
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
@@ -129,8 +150,8 @@
 - (void)processRegionEvent:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        CLRegion *region = [command.arguments objectAtIndex:0];
-        ACPRegionEventType eventType = [command.arguments objectAtIndex:1];
+        CLRegion* region = [self getCommandArg:objectAtIndex:0];
+        ACPRegionEventType eventType = [self getCommandArg:objectAtIndex:1];
         [ACPPlaces processRegionEvent: region forRegionEventType:eventType];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:extensionVersion];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -140,11 +161,20 @@
 - (void)setAuthorizationStatus:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        CLAuthorizationStatus status = [command.arguments objectAtIndex:0];
+        CLAuthorizationStatus status = [self getCommandArg:objectAtIndex:0];
         [ACPPlaces setAuthorizationStatus:status];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
+
+/*
+ * Helper functions
+ */
+
+- (id) getCommandArg:(id) argument {
+    return argument == (id)[NSNull null] ? nil : argument;
+}
+
 
 @end
