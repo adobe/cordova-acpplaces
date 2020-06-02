@@ -61,7 +61,8 @@
     [self.commandDelegate runInBackground:^{
         __block NSString* currentPoisString = @"[]";
         NSDictionary* retrievedPois = [[NSMutableDictionary alloc]init];
-        CLLocation* currentLocation = [self getCommandArg:command.arguments[0]];
+        NSDictionary* locationDict = [self getCommandArg:command.arguments[0]];
+        CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:[[locationDict valueForKey:@"latitude"] doubleValue] longitude:[[locationDict valueForKey:@"longitude"] doubleValue]];
         NSUInteger limit = [[self getCommandArg:command.arguments[1]] integerValue];
         [ACPPlaces getNearbyPointsOfInterest: currentLocation limit: limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable currentPoi) {
             if(!currentPoi || !currentPoi.count) {
@@ -106,7 +107,8 @@
     [self.commandDelegate runInBackground:^{
         __block NSString* currentPoisString = @"[]";
         NSDictionary* retrievedPois = [[NSMutableDictionary alloc]init];
-        CLLocation* currentLocation = [self getCommandArg:command.arguments[0]];
+        NSDictionary* locationDict = [self getCommandArg:command.arguments[0]];
+        CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:[[locationDict valueForKey:@"latitude"] doubleValue] longitude:[[locationDict valueForKey:@"longitude"] doubleValue]];
         NSUInteger limit = [[self getCommandArg:command.arguments[1]] integerValue];
         [ACPPlaces getNearbyPointsOfInterest: currentLocation limit: limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable nearbyPoi) {
             if(!nearbyPoi || !nearbyPoi.count) {
