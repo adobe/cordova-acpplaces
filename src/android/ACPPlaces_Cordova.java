@@ -137,7 +137,14 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 Places.getLastKnownLocation(new AdobeCallback<Location>() {
                     @Override
                     public void call(Location location) {
-                        callbackContext.success("latitude: " + location.getLatitude() + " longitude: " + location.getLongitude());
+                        JSONObject json = new JSONObject();;
+                        try {
+                            json.put("Latitude", location.getLatitude());
+                            json.put("Longitude", location.getLongitude());
+                        } catch (JSONException e){
+                            e.printStackTrace();
+                        }
+                        callbackContext.success(json.toString());
                     }
                 });
             }

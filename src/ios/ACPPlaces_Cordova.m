@@ -89,9 +89,11 @@
 {
     [self.commandDelegate runInBackground:^{
         [ACPPlaces getLastKnownLocation:^(CLLocation * _Nullable lastLocation) {
-            NSString* latitude = [[NSString alloc] initWithFormat:@"%f", lastLocation.coordinate.latitude];
-            NSString* longitude = [[NSString alloc] initWithFormat:@"%f", lastLocation.coordinate.longitude];
-            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"latitude: %@ longitude: %@", latitude, longitude]];
+            NSMutableDictionary* tempDict = [[NSMutableDictionary alloc]init];
+            [tempDict setValue:[NSNumber numberWithDouble:lastLocation.coordinate.latitude] forKey:@"Latitude"];
+            [tempDict setValue:[NSNumber numberWithDouble:lastLocation.coordinate.longitude] forKey:@"Longitude"];
+            NSData* jsonData = [NSJSONSerialization dataWithJSONObject:tempDict options:0 error:nil];
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding]];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }];
     }];
