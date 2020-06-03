@@ -60,25 +60,28 @@
 {
     [self.commandDelegate runInBackground:^{
         NSMutableArray* retrievedPoisArray = [[NSMutableArray alloc]init];
+        __block NSString* currentPoisString = @"[]";
+        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         [ACPPlaces getCurrentPointsOfInterest:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
             if(retrievedPois != nil && retrievedPois.count != 0) {
-                NSString* currentPoisString = @"[]";
                 int index = 0;
                 for (ACPPlacesPoi* currentPoi in retrievedPois) {
-                    NSMutableArray* tempArray = [[NSMutableArray alloc]init];
-                    [tempArray setValue:currentPoi.name forKey:@"POI"];
-                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [tempArray setValue:currentPoi.identifier forKey:@"Identifier"];
-                    retrievedPoisArray[index] = tempArray;
+                    NSMutableDictionary* tempDict = [[NSMutableDictionary alloc]init];
+                    [tempDict setValue:currentPoi.name forKey:@"POI"];
+                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
+                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
+                    [tempDict setValue:currentPoi.identifier forKey:@"Identifier"];
+                    retrievedPoisArray[index] = tempDict;
                     index++;
                 }
                 NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisArray options:0 error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                dispatch_semaphore_signal(semaphore);
             }
         }];
+        dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, ((int64_t)1 * NSEC_PER_SEC)));
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
 
@@ -103,28 +106,31 @@
         CLLocationDegrees longitude = [[locationDict valueForKey:@"longitude"] doubleValue];
         CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
         NSUInteger limit = [[self getCommandArg:command.arguments[1]] integerValue];
+        __block NSString* currentPoisString = @"[]";
+        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         [ACPPlaces getNearbyPointsOfInterest:currentLocation limit:limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
-            NSString* currentPoisString = @"[]";
             if(retrievedPois != nil && retrievedPois.count != 0) {
                 int index = 0;
                 for (ACPPlacesPoi* currentPoi in retrievedPois) {
-                    NSMutableArray* tempArray = [[NSMutableArray alloc]init];
-                    [tempArray setValue:currentPoi.name forKey:@"POI"];
-                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [tempArray setValue:currentPoi.identifier forKey:@"Identifier"];
-                    retrievedPoisArray[index] = tempArray;
+                    NSMutableDictionary* tempDict = [[NSMutableDictionary alloc]init];
+                    [tempDict setValue:currentPoi.name forKey:@"POI"];
+                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
+                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
+                    [tempDict setValue:currentPoi.identifier forKey:@"Identifier"];
+                    retrievedPoisArray[index] = tempDict;
                     index++;
                 }
                 NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisArray options:0 error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
-                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+                dispatch_semaphore_signal(semaphore);
             }
         }
         errorCallback:^(ACPPlacesRequestError error) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Places request error code: %lu", error]] callbackId:command.callbackId];
         }];
+        dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, ((int64_t)1 * NSEC_PER_SEC)));
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
 
