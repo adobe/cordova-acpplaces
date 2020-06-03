@@ -81,18 +81,12 @@
 - (void)getLastKnownLocation:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        __block CLLocation* retrievedLocation;
         [ACPPlaces getLastKnownLocation:^(CLLocation * _Nullable lastLocation) {
-            retrievedLocation = lastLocation;
+            NSString* latitude = [[NSString alloc] initWithFormat:@"%f", lastLocation.coordinate.latitude];
+            NSString* longitude = [[NSString alloc] initWithFormat:@"%f", lastLocation.coordinate.longitude];
+            CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"latitude: %@ longitude: %@", latitude, longitude]];
+            [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         }];
-        NSString* latitude = [[NSString alloc] 
-                  initWithFormat:@"%f",
-                  retrievedLocation.coordinate.latitude];
-        NSString* longitude = [[NSString alloc] 
-                  initWithFormat:@"%f",
-                  retrievedLocation.coordinate.longitude];
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"latitude: %@ longitude: %@", latitude, longitude]];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
 
