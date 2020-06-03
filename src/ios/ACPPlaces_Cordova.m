@@ -59,10 +59,10 @@
 - (void)getCurrentPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        __block NSString* currentPoisString = @"[]";
         NSDictionary* retrievedPoisDict = [[NSMutableDictionary alloc]init];
         [ACPPlaces getCurrentPointsOfInterest:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
-            if(!retrievedPois || !retrievedPois.count) {
+            if(retrievedPois != nil && retrievedPois.count != 0) {
+                NSString* currentPoisString = @"[]";
                 for (ACPPlacesPoi* currentPoi in retrievedPois) {
                     [retrievedPoisDict setValue:currentPoi.name forKey:@"POI"];
                     [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
@@ -71,10 +71,10 @@
                 }
                 NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisDict options:NSJSONWritingPrettyPrinted error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             }
         }];
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
 
@@ -99,8 +99,6 @@
 - (void)getNearbyPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-        __block NSString* currentPoisString = @"[]";
         NSDictionary* retrievedPoisDict = [[NSMutableDictionary alloc]init];
         NSDictionary* locationDict = [self getCommandArg:command.arguments[0]];
         CLLocationDegrees latitude = [[locationDict valueForKey:@"latitude"] doubleValue];
@@ -108,7 +106,8 @@
         CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
         NSUInteger limit = [[self getCommandArg:command.arguments[1]] integerValue];
         [ACPPlaces getNearbyPointsOfInterest:currentLocation limit:limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
-            if(!retrievedPois || !retrievedPois.count) {
+            NSString* currentPoisString = @"[]";
+            if(retrievedPois != nil && retrievedPois.count != 0) {
                 for (ACPPlacesPoi* currentPoi in retrievedPois) {
                     [retrievedPoisDict setValue:currentPoi.name forKey:@"POI"];
                     [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
@@ -117,15 +116,13 @@
                 }
                 NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisDict options:NSJSONWritingPrettyPrinted error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
-                dispatch_semaphore_signal(semaphore);
+                CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
+                [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
             }
         }
         errorCallback:^(ACPPlacesRequestError error) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Places request error code: %lu", error]] callbackId:command.callbackId];
         }];
-        dispatch_semaphore_wait(semaphore, 1000);
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
 
