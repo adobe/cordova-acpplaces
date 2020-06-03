@@ -59,17 +59,21 @@
 - (void)getCurrentPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        NSDictionary* retrievedPoisDict = [[NSMutableDictionary alloc]init];
+        NSMutableArray* retrievedPoisArray = [[NSMutableArray alloc]init];
         [ACPPlaces getCurrentPointsOfInterest:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
             if(retrievedPois != nil && retrievedPois.count != 0) {
                 NSString* currentPoisString = @"[]";
+                int index = 0;
                 for (ACPPlacesPoi* currentPoi in retrievedPois) {
-                    [retrievedPoisDict setValue:currentPoi.name forKey:@"POI"];
-                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [retrievedPoisDict setValue:currentPoi.identifier forKey:@"Identifier"];
+                    NSMutableArray* tempArray = [[NSMutableArray alloc]init];
+                    [tempArray setValue:currentPoi.name forKey:@"POI"];
+                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
+                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
+                    [tempArray setValue:currentPoi.identifier forKey:@"Identifier"];
+                    retrievedPoisArray[index] = tempArray;
+                    index++;
                 }
-                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisDict options:NSJSONWritingPrettyPrinted error:nil];
+                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisArray options:0 error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
                 CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -93,7 +97,7 @@
 - (void)getNearbyPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        NSDictionary* retrievedPoisDict = [[NSMutableDictionary alloc]init];
+        NSMutableArray* retrievedPoisArray = [[NSMutableArray alloc]init];
         NSDictionary* locationDict = [self getCommandArg:command.arguments[0]];
         CLLocationDegrees latitude = [[locationDict valueForKey:@"latitude"] doubleValue];
         CLLocationDegrees longitude = [[locationDict valueForKey:@"longitude"] doubleValue];
@@ -102,13 +106,17 @@
         [ACPPlaces getNearbyPointsOfInterest:currentLocation limit:limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
             NSString* currentPoisString = @"[]";
             if(retrievedPois != nil && retrievedPois.count != 0) {
+                int index = 0;
                 for (ACPPlacesPoi* currentPoi in retrievedPois) {
-                    [retrievedPoisDict setValue:currentPoi.name forKey:@"POI"];
-                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [retrievedPoisDict setValue:currentPoi.identifier forKey:@"Identifier"];
+                    NSMutableArray* tempArray = [[NSMutableArray alloc]init];
+                    [tempArray setValue:currentPoi.name forKey:@"POI"];
+                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
+                    [tempArray setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
+                    [tempArray setValue:currentPoi.identifier forKey:@"Identifier"];
+                    retrievedPoisArray[index] = tempArray;
+                    index++;
                 }
-                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisDict options:NSJSONWritingPrettyPrinted error:nil];
+                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisArray options:0 error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
                 CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
                 [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
