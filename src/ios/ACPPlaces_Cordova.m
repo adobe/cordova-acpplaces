@@ -60,24 +60,18 @@
 {
     [self.commandDelegate runInBackground:^{
         __block NSString* currentPoisString = @"[]";
-        NSDictionary* retrievedPois = [[NSMutableDictionary alloc]init];
-        NSDictionary* locationDict = [self getCommandArg:command.arguments[0]];
-        CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:[[locationDict valueForKey:@"latitude"] doubleValue] longitude:[[locationDict valueForKey:@"longitude"] doubleValue]];
-        NSUInteger limit = [[self getCommandArg:command.arguments[1]] integerValue];
-        [ACPPlaces getNearbyPointsOfInterest: currentLocation limit: limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable currentPoi) {
-            if(!currentPoi || !currentPoi.count) {
-                for (ACPPlacesPoi* currentPoi in currentPoi) {
-                    [retrievedPois setValue:currentPoi.name forKey:@"POI"];
-                    [retrievedPois setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [retrievedPois setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [retrievedPois setValue:currentPoi.identifier forKey:@"Identifier"];
+        NSDictionary* retrievedPoisDict = [[NSMutableDictionary alloc]init];
+        [ACPPlaces getCurrentPointsOfInterest:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
+            if(!retrievedPois || !retrievedPois.count) {
+                for (ACPPlacesPoi* currentPoi in retrievedPois) {
+                    [retrievedPoisDict setValue:currentPoi.name forKey:@"POI"];
+                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
+                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
+                    [retrievedPoisDict setValue:currentPoi.identifier forKey:@"Identifier"];
                 }
-                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPois options:NSJSONWritingPrettyPrinted error:nil];
+                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisDict options:NSJSONWritingPrettyPrinted error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
             }
-        }
-        errorCallback:^(ACPPlacesRequestError error) {
-            [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Places request error code: %lu", error]] callbackId:command.callbackId];
         }];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -88,16 +82,16 @@
 {
     [self.commandDelegate runInBackground:^{
         __block CLLocation* retrievedLocation;
-        [ACPPlaces getLastKnownLocation: ^(CLLocation * _Nullable lastLocation) {
+        [ACPPlaces getLastKnownLocation:^(CLLocation * _Nullable lastLocation) {
             retrievedLocation = lastLocation;
         }];
         NSString* latitude = [[NSString alloc] 
-                  initWithFormat:@"%g", 
+                  initWithFormat:@"%f",
                   retrievedLocation.coordinate.latitude];
         NSString* longitude = [[NSString alloc] 
-                  initWithFormat:@"%g", 
+                  initWithFormat:@"%f",
                   retrievedLocation.coordinate.longitude];
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"latitude: : %@ longitude: %@", latitude, longitude]];
+        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[NSString stringWithFormat:@"latitude: %@ longitude: %@", latitude, longitude]];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
 }
@@ -105,27 +99,31 @@
 - (void)getNearbyPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
+        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         __block NSString* currentPoisString = @"[]";
-        NSDictionary* retrievedPois = [[NSMutableDictionary alloc]init];
+        NSDictionary* retrievedPoisDict = [[NSMutableDictionary alloc]init];
         NSDictionary* locationDict = [self getCommandArg:command.arguments[0]];
-        CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:[[locationDict valueForKey:@"latitude"] doubleValue] longitude:[[locationDict valueForKey:@"longitude"] doubleValue]];
+        CLLocationDegrees latitude = [[locationDict valueForKey:@"latitude"] doubleValue];
+        CLLocationDegrees longitude = [[locationDict valueForKey:@"longitude"] doubleValue];
+        CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
         NSUInteger limit = [[self getCommandArg:command.arguments[1]] integerValue];
-        [ACPPlaces getNearbyPointsOfInterest: currentLocation limit: limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable nearbyPoi) {
-            if(!nearbyPoi || !nearbyPoi.count) {
-                for (ACPPlacesPoi* currentPoi in nearbyPoi) {
-                    [retrievedPois setValue:currentPoi.name forKey:@"POI"];
-                    [retrievedPois setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [retrievedPois setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [retrievedPois setValue:currentPoi.identifier forKey:@"Identifier"];
+        [ACPPlaces getNearbyPointsOfInterest:currentLocation limit:limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
+            if(!retrievedPois || !retrievedPois.count) {
+                for (ACPPlacesPoi* currentPoi in retrievedPois) {
+                    [retrievedPoisDict setValue:currentPoi.name forKey:@"POI"];
+                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
+                    [retrievedPoisDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
+                    [retrievedPoisDict setValue:currentPoi.identifier forKey:@"Identifier"];
                 }
-                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPois options:NSJSONWritingPrettyPrinted error:nil];
+                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisDict options:NSJSONWritingPrettyPrinted error:nil];
                 currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                dispatch_semaphore_signal(semaphore);
             }
         }
         errorCallback:^(ACPPlacesRequestError error) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Places request error code: %lu", error]] callbackId:command.callbackId];
         }];
-
+        dispatch_semaphore_wait(semaphore, 1000);
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:currentPoisString];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
@@ -152,9 +150,16 @@
 - (void)processRegionEvent:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        CLRegion* region = [self getCommandArg:command.arguments[0]];
+        NSDictionary* regionDict = [self getCommandArg:command.arguments[0]];
+        NSDictionary* centerDict = [regionDict valueForKey:@"center"];
+        CLLocationDegrees latitude = [[centerDict valueForKey:@"latitude"] doubleValue];
+        CLLocationDegrees longitude = [[centerDict valueForKey:@"longitude"] doubleValue];
+        CLLocationCoordinate2D center = CLLocationCoordinate2DMake(latitude,longitude);
+        NSUInteger radius = [[regionDict valueForKey:@"radius"] integerValue];
+        NSString* identifier = [regionDict valueForKey:@"identifier"];
+        CLRegion* region = [[CLCircularRegion alloc] initWithCenter:center radius:radius identifier:identifier];
         ACPRegionEventType eventType = [[self getCommandArg:command.arguments[1]] integerValue];
-        [ACPPlaces processRegionEvent: region forRegionEventType:eventType];
+        [ACPPlaces processRegionEvent:region forRegionEventType:eventType];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
