@@ -126,27 +126,9 @@ var ACPPlaces = (function() {
         return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [location, limit]);
     };
 
-    // Android only. Pass a GeofencingEvent to be processed by the SDK.
-    ACPPlaces.processGeofenceEvent = function (geofencingEvent, success, error) {
-        var FUNCTION_NAME = "processGeofenceEvent";
 
-        if (geofencingEvent && !acpIsValidGeofencingEvent(geofencingEvent)) {
-            return;
-        }
-
-        if (success && !isFunction(success)) {
-            printNotAFunction("success", FUNCTION_NAME);
-            return;
-        }
-
-        if (error && !isFunction(error)) {
-            printNotAFunction("error", FUNCTION_NAME);
-            return;
-        }
-        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [geofencingEvent]);
-    };
-
-    // Android only. Pass a Geofence and transition type to be processed by the SDK.
+    // Pass a Geofence and transition type to be processed by the SDK.
+    // This corresponds to Android ACPPlaces.processGeofence and iOS ACPPlaces.processRegionEvent
     ACPPlaces.processGeofence = function (geofence, transitionType, success, error) {
         var FUNCTION_NAME = "processGeofence";
 
@@ -170,32 +152,6 @@ var ACPPlaces = (function() {
         }
 
         return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [geofence, transitionType]);
-    };
-
-    // iOS only. Passes a region and event type to be processed by the SDK.
-    ACPPlaces.processRegionEvent = function (region, eventType, success, error) {
-        var FUNCTION_NAME = "processRegionEvent";
-
-        if (region && !acpIsValidRegion(region)) {
-            return;
-        }
-
-        if (eventType && !acpIsNumber(eventType)) {
-            acpPrintNotANumber("eventType", FUNCTION_NAME);
-            return;
-        }
-
-        if (success && !isFunction(success)) {
-            printNotAFunction("success", FUNCTION_NAME);
-            return;
-        }
-
-        if (error && !isFunction(error)) {
-            printNotAFunction("error", FUNCTION_NAME);
-            return;
-        }
-
-        return exec(success, error, 'ACPPlaces_Cordova', FUNCTION_NAME, [region, eventType]);
     };
 
     // Sets the authorization status in the Places extension.
@@ -272,24 +228,6 @@ function acpIsValidLocation (location) {
     return true;
 };
 
-function acpIsValidGeofencingEvent (geofencingEvent) {
-    if (!acpIsNumber(geofencingEvent.transition)) {
-        console.log("geofencingEvent.transition must be of type Number.");
-        return false;
-    }
-
-    if (!acpIsObject(geofencingEvent.triggeringGeofences)) {
-        console.log("geofencingEvent.triggeringGeofences must be of type Object.");
-        return false;
-    }
-
-    if (!acpIsValidLocation(geofencingEvent.location)) {
-        return false;
-    }
-
-    return true;
-};
-
 function acpIsValidGeofence (geofence) {
     if (!acpIsString(geofence.requestId)) {
         console.log("geofence.requestId must be of type String.");
@@ -321,24 +259,6 @@ function acpIsValidCircularRegion (circularRegion) {
 
     if (!acpIsNumber(circularRegion.radius)) {
         console.log("circularRegion.radius must be of type Number.");
-        return false;
-    }
-
-    return true;
-};
-
-function acpIsValidRegion (region) {
-    if (!acpIsValidLocation(region.center)) {
-        return false;
-    }
-
-    if (!acpIsNumber(region.radius)) {
-        console.log("region.radius must be of type Number.");
-        return false;
-    }
-
-    if (!acpIsString(region.identifier)) {
-        console.log("region.identifier must be of type String.");
         return false;
     }
 

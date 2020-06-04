@@ -22,14 +22,24 @@
 - (void)getCurrentPointsOfInterest:(CDVInvokedUrlCommand*)command;
 - (void)getLastKnownLocation:(CDVInvokedUrlCommand*)command;
 - (void)getNearbyPointsOfInterest:(CDVInvokedUrlCommand*)command;
-- (void)processGeofenceEvent:(CDVInvokedUrlCommand*)comman;
 - (void)processGeofence:(CDVInvokedUrlCommand*)command;
-- (void)processRegionEvent:(CDVInvokedUrlCommand*)command;
 - (void)setAuthorizationStatus:(CDVInvokedUrlCommand*)command;
 
 @end
 
 @implementation ACPPlaces_Cordova
+
+static NSString * const POI = @"POI";
+static NSString * const LATITUDE = @"Latitude";
+static NSString * const LONGITUDE = @"Longitude";
+static NSString * const LOWERCASE_LATITUDE = @"latitude";
+static NSString * const LOWERCASE_LONGITUDE = @"longitude";
+static NSString * const IDENTIFIER = @"Identifier";
+static NSString * const CENTER = @"center";
+static NSString * const RADIUS = @"radius";
+static NSString * const LOWERCASE_IDENTIFIER = @"identifier";
+static NSString * const CIRCULAR_REGION = @"circularRegion";
+static NSString * const EMPTY_ARRAY_STRING = @"[]";
 
 - (void)clear:(CDVInvokedUrlCommand*)command
 {
@@ -59,23 +69,11 @@
 - (void)getCurrentPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        NSMutableArray* retrievedPoisArray = [[NSMutableArray alloc]init];
-        __block NSString* currentPoisString = @"[]";
+        __block NSString* currentPoisString = EMPTY_ARRAY_STRING;
         dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         [ACPPlaces getCurrentPointsOfInterest:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
             if(retrievedPois != nil && retrievedPois.count != 0) {
-                int index = 0;
-                for (ACPPlacesPoi* currentPoi in retrievedPois) {
-                    NSMutableDictionary* tempDict = [[NSMutableDictionary alloc]init];
-                    [tempDict setValue:currentPoi.name forKey:@"POI"];
-                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [tempDict setValue:currentPoi.identifier forKey:@"Identifier"];
-                    retrievedPoisArray[index] = tempDict;
-                    index++;
-                }
-                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisArray options:0 error:nil];
-                currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                currentPoisString = [self generatePOIString:retrievedPois];
                 dispatch_semaphore_signal(semaphore);
             }
         }];
@@ -90,8 +88,8 @@
     [self.commandDelegate runInBackground:^{
         [ACPPlaces getLastKnownLocation:^(CLLocation * _Nullable lastLocation) {
             NSMutableDictionary* tempDict = [[NSMutableDictionary alloc]init];
-            [tempDict setValue:[NSNumber numberWithDouble:lastLocation.coordinate.latitude] forKey:@"Latitude"];
-            [tempDict setValue:[NSNumber numberWithDouble:lastLocation.coordinate.longitude] forKey:@"Longitude"];
+            [tempDict setValue:[NSNumber numberWithDouble:lastLocation.coordinate.latitude] forKey:LATITUDE];
+            [tempDict setValue:[NSNumber numberWithDouble:lastLocation.coordinate.longitude] forKey:LONGITUDE];
             NSData* jsonData = [NSJSONSerialization dataWithJSONObject:tempDict options:0 error:nil];
             CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding]];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -102,32 +100,18 @@
 - (void)getNearbyPointsOfInterest:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        NSMutableArray* retrievedPoisArray = [[NSMutableArray alloc]init];
         NSDictionary* locationDict = [self getCommandArg:command.arguments[0]];
-        CLLocationDegrees latitude = [[locationDict valueForKey:@"latitude"] doubleValue];
-        CLLocationDegrees longitude = [[locationDict valueForKey:@"longitude"] doubleValue];
+        CLLocationDegrees latitude = [[locationDict valueForKey:LOWERCASE_LATITUDE] doubleValue];
+        CLLocationDegrees longitude = [[locationDict valueForKey:LOWERCASE_LONGITUDE] doubleValue];
         CLLocation* currentLocation = [[CLLocation alloc] initWithLatitude:latitude longitude:longitude];
         NSUInteger limit = [[self getCommandArg:command.arguments[1]] integerValue];
-        __block NSString* currentPoisString = @"[]";
+        __block NSString* currentPoisString = EMPTY_ARRAY_STRING;
         dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         [ACPPlaces getNearbyPointsOfInterest:currentLocation limit:limit callback:^(NSArray<ACPPlacesPoi *> * _Nullable retrievedPois) {
-            if(retrievedPois != nil && retrievedPois.count != 0) {
-                int index = 0;
-                for (ACPPlacesPoi* currentPoi in retrievedPois) {
-                    NSMutableDictionary* tempDict = [[NSMutableDictionary alloc]init];
-                    [tempDict setValue:currentPoi.name forKey:@"POI"];
-                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:@"Latitude"];
-                    [tempDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:@"Longitude"];
-                    [tempDict setValue:currentPoi.identifier forKey:@"Identifier"];
-                    retrievedPoisArray[index] = tempDict;
-                    index++;
-                }
-                NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisArray options:0 error:nil];
-                currentPoisString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+                currentPoisString = [self generatePOIString:retrievedPois];
                 dispatch_semaphore_signal(semaphore);
             }
-        }
-        errorCallback:^(ACPPlacesRequestError error) {
+                errorCallback:^(ACPPlacesRequestError error) {
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:[NSString stringWithFormat:@"Places request error code: %lu", error]] callbackId:command.callbackId];
         }];
         dispatch_semaphore_wait(semaphore, dispatch_time(DISPATCH_TIME_NOW, ((int64_t)1 * NSEC_PER_SEC)));
@@ -136,36 +120,18 @@
     }];
 }
 
-- (void)processGeofenceEvent:(CDVInvokedUrlCommand*)command
-{
-    [self.commandDelegate runInBackground:^{
-        // this method is not implemented in iOS
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }];
-}
-
 - (void)processGeofence:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        // this method is not implemented in iOS
-        CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
-        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
-    }];
-}
-
-- (void)processRegionEvent:(CDVInvokedUrlCommand*)command
-{
-    [self.commandDelegate runInBackground:^{
-        NSDictionary* regionDict = [self getCommandArg:command.arguments[0]];
-        NSDictionary* centerDict = [regionDict valueForKey:@"center"];
-        CLLocationDegrees latitude = [[centerDict valueForKey:@"latitude"] doubleValue];
-        CLLocationDegrees longitude = [[centerDict valueForKey:@"longitude"] doubleValue];
-        CLLocationCoordinate2D center = CLLocationCoordinate2DMake(latitude,longitude);
-        NSUInteger radius = [[regionDict valueForKey:@"radius"] integerValue];
-        NSString* identifier = [regionDict valueForKey:@"identifier"];
-        CLRegion* region = [[CLCircularRegion alloc] initWithCenter:center radius:radius identifier:identifier];
+        NSDictionary* geofenceDict = [self getCommandArg:command.arguments[0]];
+        NSDictionary* regionDict = [geofenceDict valueForKey:CIRCULAR_REGION];
         ACPRegionEventType eventType = [[self getCommandArg:command.arguments[1]] integerValue];
+        CLLocationDegrees latitude = [[regionDict valueForKey:LOWERCASE_LATITUDE] doubleValue];
+        CLLocationDegrees longitude = [[regionDict valueForKey:LOWERCASE_LONGITUDE] doubleValue];
+        CLLocationCoordinate2D center = CLLocationCoordinate2DMake(latitude,longitude);
+        NSUInteger radius = [[regionDict valueForKey:RADIUS] integerValue];
+        NSString* identifier = [geofenceDict valueForKey:LOWERCASE_IDENTIFIER];
+        CLRegion* region = [[CLCircularRegion alloc] initWithCenter:center radius:radius identifier:identifier];
         [ACPPlaces processRegionEvent:region forRegionEventType:eventType];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
@@ -188,6 +154,24 @@
 
 - (id) getCommandArg:(id) argument {
     return argument == (id)[NSNull null] ? nil : argument;
+}
+
+- (NSString*) generatePOIString:(NSArray<ACPPlacesPoi *> *) retrievedPois {
+    NSMutableArray* retrievedPoisArray = [[NSMutableArray alloc]init];
+    if(retrievedPois != nil && retrievedPois.count != 0) {
+        for (int index = 0; index < retrievedPois.count; index++) {
+            NSMutableDictionary* tempDict = [[NSMutableDictionary alloc]init];
+            ACPPlacesPoi* currentPoi = retrievedPois[index];
+            [tempDict setValue:currentPoi.name forKey:POI];
+            [tempDict setValue:[NSNumber numberWithDouble:currentPoi.latitude] forKey:LATITUDE];
+            [tempDict setValue:[NSNumber numberWithDouble:currentPoi.longitude] forKey:LONGITUDE];
+            [tempDict setValue:currentPoi.identifier forKey:IDENTIFIER];
+            retrievedPoisArray[index] = tempDict;
+        }
+        NSData* jsonData = [NSJSONSerialization dataWithJSONObject:retrievedPoisArray options:0 error:nil];
+        return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+    }
+    return EMPTY_ARRAY_STRING;
 }
 
 

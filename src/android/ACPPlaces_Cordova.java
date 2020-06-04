@@ -10,14 +10,10 @@
  */
 
 package com.adobe.marketing.mobile.cordova;
-
-import android.content.Intent;
-import android.os.Handler;
-import android.os.Looper;
-
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
 
+import org.apache.cordova.LOG;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,41 +28,56 @@ import java.util.Iterator;
 import java.util.HashMap;
 import android.location.Location;
 import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingEvent;
 
 /**
  * This class echoes a string called from JavaScript.
  */
 public class ACPPlaces_Cordova extends CordovaPlugin {
 
+    final static String METHOD_PLACES_CLEAR = "clear";
+    final static String METHOD_PLACES_EXTENSION_VERSION_PLACES = "extensionVersion";
+    final static String METHOD_PLACES_GET_CURRENT_POINTS_OF_INTEREST = "getCurrentPointsOfInterest";
+    final static String METHOD_PLACES_GET_LAST_KNOWN_LOCATION = "getLastKnownLocation";
+    final static String METHOD_PLACES_GET_NEARBY_POINTS_OF_INTEREST = "getNearbyPointsOfInterest";
+    final static String METHOD_PLACES_PROCESS_GEOFENCE = "processGeofence";
+    final static String METHOD_PLACES_SET_AUTHORIZATION_STATUS = "setAuthorizationStatus";
+
+    final static String LOG_TAG = "ACPPlaces_Cordova";
+
+    final static String POI = "POI";
+    final static String LATITUDE = "Latitude";
+    final static String LONGITUDE = "Longitude";
+    final static String LOWERCASE_LATITUDE = "latitude";
+    final static String LOWERCASE_LONGITUDE = "longitude";
+    final static String IDENTIFIER = "Identifier";
+    final static String RADIUS = "radius";
+    final static String REQUEST_ID = "requestId";
+    final static String CIRCULAR_REGION = "circularRegion";
+    final static String EXPIRATION_DURATION = "expirationDuration";
+    final static String PROVIDER = "cordova-plugin-geolocation";
+
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) {
 
-        if ("clear".equals(action)) {
+        if (METHOD_PLACES_CLEAR.equals(action)) {
             clear(callbackContext);
             return true;
-        } else if ("extensionVersion".equals((action))) {
+        } else if (METHOD_PLACES_EXTENSION_VERSION_PLACES.equals((action))) {
             extensionVersion(callbackContext);
             return true;
-        } else if ("getCurrentPointsOfInterest".equals((action))) {
+        } else if (METHOD_PLACES_GET_CURRENT_POINTS_OF_INTEREST.equals((action))) {
             getCurrentPointsOfInterest(callbackContext);
             return true;
-        }else if ("getLastKnownLocation".equals((action))) {
+        }else if (METHOD_PLACES_GET_LAST_KNOWN_LOCATION.equals((action))) {
             getLastKnownLocation(callbackContext);
             return true;
-        } else if ("getNearbyPointsOfInterest".equals((action))) {
+        } else if (METHOD_PLACES_GET_NEARBY_POINTS_OF_INTEREST.equals((action))) {
             getNearbyPointsOfInterest(args, callbackContext);
             return true;
-        } else if ("processGeofenceEvent".equals((action))) {
-            processGeofenceEvent(args, callbackContext);
-            return true;
-        } else if ("processGeofence".equals((action))) {
+        } else if (METHOD_PLACES_PROCESS_GEOFENCE.equals((action))) {
             processGeofence(args, callbackContext);
             return true;
-        } else if ("processRegionEvent".equals((action))) {
-            processRegionEvent(callbackContext);
-            return true;
-        } else if ("setAuthorizationStatus".equals((action))) {
+        } else if (METHOD_PLACES_SET_AUTHORIZATION_STATUS.equals((action))) {
             setAuthorizationStatus(args, callbackContext);
             return true;
         }
@@ -105,25 +116,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 Places.getCurrentPointsOfInterest(new AdobeCallback<List<PlacesPOI>>() {
                     @Override
                     public void call(List<PlacesPOI> pois) {
-                        int index = 0;
-                        JSONArray jsonArray = new JSONArray();
-                        JSONObject json;
-                        if (!pois.isEmpty()) {
-                            for (PlacesPOI poi : pois) {
-                                try {
-                                    json = new JSONObject();
-                                    json.put("POI", poi.getName());
-                                    json.put("Latitude", poi.getLatitude());
-                                    json.put("Longitude", poi.getLongitude());
-                                    json.put("Identifier", poi.getIdentifier());
-                                    jsonArray.put(index, json);
-                                    index++;
-                                } catch (JSONException e){
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                        callbackContext.success(jsonArray.toString());
+                        callbackContext.success(generatePOIString(pois));
                     }
                 });
             }
@@ -137,14 +130,18 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                 Places.getLastKnownLocation(new AdobeCallback<Location>() {
                     @Override
                     public void call(Location location) {
-                        JSONObject json = new JSONObject();;
-                        try {
-                            json.put("Latitude", location.getLatitude());
-                            json.put("Longitude", location.getLongitude());
-                        } catch (JSONException e){
-                            e.printStackTrace();
+                        if(location != null) {
+                            JSONObject json = new JSONObject();;
+                            try {
+                                json.put(LATITUDE, location.getLatitude());
+                                json.put(LONGITUDE, location.getLongitude());
+                            } catch (JSONException e){
+                                LOG.d(LOG_TAG, "Error putting data into JSON: " + e.getLocalizedMessage());
+                            }
+                            callbackContext.success(json.toString());
+                        } else {
+                            callbackContext.error("Error retrieving last known location.");
                         }
-                        callbackContext.success(json.toString());
                     }
                 });
             }
@@ -159,7 +156,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                     callbackContext.error("Invalid argument count, expected 2 (location and limit).");
                     return;
                 }
-                Location location = new Location("");
+                Location location = new Location(PROVIDER);
                 HashMap<String, String> locationMap;
                 int limit;
                 try {
@@ -170,30 +167,12 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                     return;
                 }
 
-                location.setLatitude(Double.parseDouble(locationMap.get("latitude")));
-                location.setLongitude(Double.parseDouble(locationMap.get("longitude")));
+                location.setLatitude(Double.parseDouble(locationMap.get(LOWERCASE_LATITUDE)));
+                location.setLongitude(Double.parseDouble(locationMap.get(LOWERCASE_LONGITUDE)));
                 Places.getNearbyPointsOfInterest(location, limit, new AdobeCallback<List<PlacesPOI>>() {
                     @Override
                     public void call(List<PlacesPOI> pois) {
-                        int index = 0;
-                        JSONArray jsonArray = new JSONArray();
-                        JSONObject json;
-                        if (!pois.isEmpty()) {
-                            for (PlacesPOI poi : pois) {
-                                try {
-                                    json = new JSONObject();
-                                    json.put("POI", poi.getName());
-                                    json.put("Latitude", poi.getLatitude());
-                                    json.put("Longitude", poi.getLongitude());
-                                    json.put("Identifier", poi.getIdentifier());
-                                    jsonArray.put(index, json);
-                                    index++;
-                                } catch (JSONException e){
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                        callbackContext.success(jsonArray.toString());
+                        callbackContext.success(generatePOIString(pois));
                     }
                 }, new AdobeCallback<PlacesRequestError>() {
                     @Override
@@ -201,16 +180,6 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                         callbackContext.error(placesRequestError.toString());
                     }
                 });
-            }
-        });
-    }
-
-    private void processGeofenceEvent(final JSONArray args, final CallbackContext callbackContext) {
-        cordova.getThreadPool().execute(new Runnable() {
-            @Override
-            public void run() {
-                // this method is not implemented. please use processGeofence.
-                callbackContext.success();
             }
         });
     }
@@ -232,12 +201,16 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                     callbackContext.error("Error while parsing argument, Error " + e.getLocalizedMessage());
                     return;
                 }
-                String requestId = (String)geofenceMap.get("requestId");
-                HashMap<String, String> circularRegion = getCircularRegionData((String)geofenceMap.get("circularRegion"));
-                double latitude = Double.parseDouble(circularRegion.get("latitude"));
-                double longitude = Double.parseDouble(circularRegion.get("longitude"));
-                float radius = Float.parseFloat(circularRegion.get("radius"));
-                long expirationDuration = Long.parseLong((String)geofenceMap.get("expirationDuration"));
+                String requestId = (String)geofenceMap.get(REQUEST_ID);
+                HashMap<String, String> circularRegion = getCircularRegionData((String)geofenceMap.get(CIRCULAR_REGION));
+                if(circularRegion == null) {
+                    callbackContext.error("Unable to get circular region data");
+                    return;
+                }
+                double latitude = Double.parseDouble(circularRegion.get(LOWERCASE_LATITUDE));
+                double longitude = Double.parseDouble(circularRegion.get(LOWERCASE_LONGITUDE));
+                float radius = Float.parseFloat(circularRegion.get(RADIUS));
+                long expirationDuration = Long.parseLong((String)geofenceMap.get(EXPIRATION_DURATION));
                 final Geofence geofence = new Geofence.Builder()
                         .setCircularRegion(latitude, longitude, radius)
                         .setExpirationDuration(expirationDuration)
@@ -245,16 +218,6 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
                         .setRequestId(requestId)
                         .build();
                 Places.processGeofence(geofence, transitionType);
-                callbackContext.success();
-            }
-        });
-    }
-
-     private void processRegionEvent(final CallbackContext callbackContext) {
-        cordova.getThreadPool().execute(new Runnable() {
-            @Override
-            public void run() {
-                // this method is not implemented in Android
                 callbackContext.success();
             }
         });
@@ -294,7 +257,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
             try {
                 map.put(n, data.getString(n));
             } catch (JSONException e) {
-                e.printStackTrace();
+                LOG.d(LOG_TAG, "JSON error: " + e.getLocalizedMessage());
             }
         }
 
@@ -310,7 +273,7 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
             try {
                 map.put(n, data.getString(n));
             } catch (JSONException e) {
-                e.printStackTrace();
+                LOG.d(LOG_TAG, "JSON error: " + e.getLocalizedMessage());
             }
         }
 
@@ -334,14 +297,43 @@ public class ACPPlaces_Cordova extends CordovaPlugin {
     }
 
     private HashMap<String, String> getCircularRegionData(final String regionData) {
-        String regionDataString = regionData.replace("{","").replace("}","").replace("\"","");
-        String[] dataPairs = regionDataString.split(",");
-        HashMap<String, String> regionDataMap = new HashMap<>();
-        for(int i=0; i < dataPairs.length; i++){
-            String pair = dataPairs[i];
-            String[] keys = pair.split(":");
-            regionDataMap.put(keys[0], keys[1]);
+        JSONObject json = null;
+
+        try {
+            json = new JSONObject(regionData);
+            HashMap<String, String> regionDataMap = new HashMap<>();
+            @SuppressWarnings("unchecked")
+            Iterator<String> it = json.keys();
+            while(it.hasNext()) {
+                String name = it.next();
+                regionDataMap.put(name, json.getString(name));
+            }
+            return regionDataMap;
+        } catch (JSONException e) {
+            LOG.d(LOG_TAG, "Error converting regionData string to Map: " + e.getLocalizedMessage());
+            return null;
         }
-        return regionDataMap;
+
+    }
+
+    private String generatePOIString(final List<PlacesPOI> pois) {
+        JSONArray jsonArray = new JSONArray();
+        JSONObject json;
+        if (!pois.isEmpty()) {
+            for (int index = 0; index < pois.size(); index++) {
+                try {
+                    PlacesPOI poi = pois.get(index);
+                    json = new JSONObject();
+                    json.put(POI, poi.getName());
+                    json.put(LATITUDE, poi.getLatitude());
+                    json.put(LONGITUDE, poi.getLongitude());
+                    json.put(IDENTIFIER, poi.getIdentifier());
+                    jsonArray.put(index, json);
+                } catch (JSONException e) {
+                    LOG.d(LOG_TAG, "Error putting data into JSON: " + e.getLocalizedMessage());
+                }
+            }
+        }
+        return jsonArray.toString();
     }
 }
