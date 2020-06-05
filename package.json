@@ -1,0 +1,27 @@
+{
+  "name": "@adobe/cordova-acpplaces",
+  "version": "0.0.1",
+  "description": "Adobe Experience Platform - Places plugin for Cordova apps.",
+  "cordova": {
+    "id": "cordova-acpplaces",
+    "platforms": [
+      "android",
+      "ios"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/adobe/cordova-acpplaces"
+  },
+  "keywords": [
+    "ecosystem:cordova",
+    "adobe",
+    "places",
+    "acpplaces",
+    "marketing",
+    "cordova-android",
+    "cordova-ios"
+  ],
+  "author": "Adobe",
+  "license": "Apache 2.0"
+}
