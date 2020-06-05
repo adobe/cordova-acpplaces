@@ -141,8 +141,8 @@ static NSString * const EMPTY_ARRAY_STRING = @"[]";
 - (void)setAuthorizationStatus:(CDVInvokedUrlCommand*)command
 {
     [self.commandDelegate runInBackground:^{
-        CLAuthorizationStatus status = [[self getCommandArg:command.arguments[0]] integerValue];
-        [ACPPlaces setAuthorizationStatus:status];
+        int status = [[self getCommandArg:command.arguments[0]] integerValue];
+        [ACPPlaces setAuthorizationStatus:[self convertToCLAuthorizationStatus:status]];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
@@ -172,6 +172,31 @@ static NSString * const EMPTY_ARRAY_STRING = @"[]";
         return [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
     }
     return EMPTY_ARRAY_STRING;
+}
+
+- (CLAuthorizationStatus) convertToCLAuthorizationStatus:(int) status {
+    switch (status) {
+    case 0:
+        return kCLAuthorizationStatusDenied;
+        break;
+
+    case 1:
+        return kCLAuthorizationStatusAuthorizedAlways;
+        break;
+
+    case 2:
+        return kCLAuthorizationStatusNotDetermined;
+        break;
+
+    case 3:
+        return kCLAuthorizationStatusRestricted;
+        break;
+
+    case 4:
+    default:
+        return kCLAuthorizationStatusAuthorizedWhenInUse;
+        break;
+    }
 }
 
 

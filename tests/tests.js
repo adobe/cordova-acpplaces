@@ -1,4 +1,21 @@
 exports.defineAutoTests = function () {
+
+    describe('(ACPPlaces.clear)', function () {
+        beforeEach(function() {
+          spyOn(console, 'log');
+        })
+
+        it('should print log to console stating success is not function', function(){
+          ACPPlaces.clear("success", function() {})
+          expect(console.log).toHaveBeenCalled();
+        })
+
+        it('should print log to console stating error is not function', function(){
+          ACPPlaces.clear( function() {}, "error")
+          expect(console.log).toHaveBeenCalled();
+        })
+    });
+
     describe('(ACPPlaces.extensionVersion)', function () {
         it('should exist', function () {
             expect(ACPPlaces.extensionVersion).toBeDefined();
@@ -14,95 +31,86 @@ exports.defineAutoTests = function () {
         });
     });
 
-    // TODO
-    // describe('(ACPAnalytics.sendQueuedHits)', function () {
-    //     beforeEach(function() {
-    //       spyOn(console, 'log');
-    //     })
+    describe('(ACPPlaces.getCurrentPointsOfInterest)', function () {
+        beforeEach(function() {
+          spyOn(console, 'log');
+        })
 
-    //     it('should print log to console stating success is not function', function(){
-    //       ACPAnalytics.sendQueuedHits("success", function() {})
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
+        it('should print log to console stating success is not function', function(){
+          ACPPlaces.getCurrentPointsOfInterest("success", function() {})
+          expect(console.log).toHaveBeenCalled();
+        })
 
-    //     it('should print log to console stating error is not function', function(){
-    //       ACPAnalytics.sendQueuedHits( function() {}, "error")
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
-    // });
+        it('should print log to console stating error is not function', function(){
+          ACPPlaces.getCurrentPointsOfInterest( function() {}, "error")
+          expect(console.log).toHaveBeenCalled();
+        })
+    });
 
-    // describe('(ACPAnalytics.clearQueue)', function () {
-    //     beforeEach(function() {
-    //       spyOn(console, 'log');
-    //     })
+    describe('(ACPPlaces.getLastKnownLocation)', function () {
+        beforeEach(function() {
+          spyOn(console, 'log');
+        })
 
-    //     it('should print log to console stating success is not function', function(){
-    //       ACPAnalytics.clearQueue("success", function() {})
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
+        it('should print log to console stating success is not function', function(){
+          ACPPlaces.getLastKnownLocation("success", function() {})
+          expect(console.log).toHaveBeenCalled();
+        })
 
-    //     it('should print log to console stating error is not function', function(){
-    //       ACPAnalytics.clearQueue( function() {}, "error")
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
-    // });
+        it('should print log to console stating error is not function', function(){
+          ACPPlaces.getLastKnownLocation( function() {}, "error")
+          expect(console.log).toHaveBeenCalled();
+        })
+    });
 
-    // describe('(ACPAnalytics.getQueueSize)', function () {
-    //     beforeEach(function() {
-    //       spyOn(console, 'log');
-    //     })
+    describe('(ACPPlaces.getNearbyPointsOfInterest)', function () {
+        beforeEach(function() {
+          spyOn(console, 'log');
+        })
 
-    //     it('should print log to console stating success is not function', function(){
-    //       ACPAnalytics.getQueueSize("success", function() {})
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
+        var location = {latitude:37.3309422, longitude:-121.8939077};
+        it('should print log to console stating success is not function', function(){
+          ACPPlaces.getNearbyPointsOfInterest(location, 10, "success", function() {})
+          expect(console.log).toHaveBeenCalled();
+        })
 
-    //     it('should print log to console stating error is not function', function(){
-    //       ACPAnalytics.getQueueSize( function() {}, "error")
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
-    // });
+        it('should print log to console stating error is not function', function(){
+          ACPPlaces.getNearbyPointsOfInterest(location, 10, function() {}, "error")
+          expect(console.log).toHaveBeenCalled();
+        })
+    });
 
-    // describe('(ACPAnalytics.getTrackingIdentifier)', function () {
-    //     beforeEach(function() {
-    //       spyOn(console, 'log');
-    //     })
+    describe('(ACPPlaces.processGeofence)', function () {
+        beforeEach(function() {
+          spyOn(console, 'log');
+        })
 
-    //     it('should print log to console stating success is not function', function(){
-    //       ACPAnalytics.getTrackingIdentifier("success", function() {})
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
+        var region = {latitude:37.3309422, longitude:-121.8939077, radius:1000};
+        var geofence = {requestId:"requestId", circularRegion:region, expirationDuration:-1};
+        it('should print log to console stating success is not function', function(){
+          ACPPlaces.processGeofence(geofence, "success", function() {})
+          expect(console.log).toHaveBeenCalled();
+        })
 
-    //     it('should print log to console stating error is not function', function(){
-    //       ACPAnalytics.getTrackingIdentifier( function() {}, "error")
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
-    // });
+        it('should print log to console stating error is not function', function(){
+          ACPPlaces.processGeofence(geofence, function() {}, "error")
+          expect(console.log).toHaveBeenCalled();
+        })
+    });
 
-    // describe('(ACPAnalytics.getVisitorIdentifier)', function () {
-    //     beforeEach(function() {
-    //       spyOn(console, 'log');
-    //     })
+    describe('(ACPPlaces.setAuthorizationStatus)', function () {
+        beforeEach(function(){
+          spyOn(console, 'log');
+        })
 
-    //     it('should print log to console stating success is not function', function(){
-    //       ACPAnalytics.getVisitorIdentifier("success", function() {})
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
+        it('should print log to console stating success is not function', function(){
+          ACPPlaces.setAuthorizationStatus(1, "success", function() {})
+          expect(console.log).toHaveBeenCalled();
+        })
 
-    //     it('should print log to console stating error is not function', function(){
-    //       ACPAnalytics.getVisitorIdentifier( function() {}, "error")
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
-    // });
-
-    // describe('(ACPAnalytics.setVisitorIdentifier)', function () {
-    //     beforeEach(function(){
-    //       spyOn(console, 'log');
-    //     })
-
-    //     it('should print log to console', function(){
-    //       ACPAnalytics.setVisitorIdentifier(null, function(){}, function(){})
-    //       expect(console.log).toHaveBeenCalled();
-    //     })
-    // });
+        it('should print log to console stating error is not function', function(){
+          ACPPlaces.setAuthorizationStatus(1, function() {}, "error")
+          expect(console.log).toHaveBeenCalled();
+        })
+    });
 };

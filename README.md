@@ -23,7 +23,7 @@ Once Node.js is installed, you can install the Cordova framework from terminal:
 
 ```  
 sudo npm install -g cordova  
-```  
+```
 
 ## Installation
 
@@ -34,8 +34,6 @@ cordova plugin add https://github.com/adobe/cordova-acpplaces.git
 Check out the documentation for help with APIs
 
 ## Usage
-
-#TODO
 
 ##### Getting the SDK version:
 ```js
@@ -48,64 +46,70 @@ ACPPlaces.extensionVersion(function(version){
 ##### Registering the extension with ACPCore:  
 
  > Note: It is required to initialize the SDK via native code inside your AppDelegate and MainApplication for iOS and Android respectively. For more information see how to initialize [Core](https://aep-sdks.gitbook.io/docs/getting-started/initialize-the-sdk).  
+  
   ##### **iOS**  
 ```objective-c
 #import "ACPPlaces.h"  
 [ACPPlaces registerExtension];  
-```  
+```
   ##### **Android:**  
 ```java
 import com.adobe.marketing.mobile.Places;  
 Places.registerExtension();
 ```
-##### Get the tracking identifier:
+##### Clear client side Places plugin data:
 ```js
-ACPAnalytics.getTrackingIdentifier(function(trackingId) {  
-    console.log(trackingId);
+ACPPlaces.clear(function(response) {  
+    console.log("Successfully cleared Places data.");
 }, function(error){  
     console.log(error);  
 });
 ```
-##### Send queued hits:
+##### Get the current POI's that the device is currently known to be within:
 ```js
-ACPAnalytics.sendQueuedHits(function(response){  
-    console.log("Success in sendQueuedHits");  
+ACPPlaces.getCurrentPointsOfInterest(function(response){  
+    console.log("Current POI's: ", response);  
 }, function(error){  
     console.log(error);  
 });  
 ```
-##### Get the queue size:
+##### Get the last latitude and longitude stored in the Places plugin:
 ```js
-ACPAnalytics.getQueueSize(function(size) {  
-    console.log(size);
+ACPPlaces.getLastKnownLocation(function(response) {  
+    console.log("Last known location: ", response);
 }, function(error){  
     console.log(error);  
 });
 ```
-##### Clear queued hits:
+##### Get a list of nearby POI's:
 ```js
-ACPAnalytics.clearQueue(function(response){  
-    console.log("Success in clearing queue");  
+var location = {latitude:37.3309422, longitude:-121.8939077};
+var limit = 10; // max number of POI's to return
+ACPPlaces.getNearbyPointsOfInterest(location, limit, function(response){  
+    console.log("Nearby POI's: ", response);  
 }, function(error){  
     console.log(error);  
 });
 ```
-##### Set the custom visitor identifier:
+##### Pass a Geofence and transition type to be processed by the Places plugin:
+
 ```js
-ACPAnalytics.setVisitorIdentifier(customVisitorId, function(response) {  
-    console.log("Success in setting visitor Id with " + customVisitorId);  
+var region = {latitude:37.3309422, longitude:-121.8939077, radius:1000};
+var geofence = {requestId:"geofence_id", circularRegion:region, expirationDuration:-1};
+ACPPlaces.processGeofence(geofence, geo.transitionType, function(response) {  
+    console.log("Successfully processed geofence: ", geofence); 
 }, function(error){  
     console.log(error);  
 });
 ```
-##### Get the custom visitor identifier:
+##### Set the authorization status:
 ```js
-ACPAnalytics.getVisitorIdentifier(function(visitorId) {  
-    console.log(visitorId);
+ACPPlaces.setAuthorizationStatus(ACPPlaces.AuthorizationStatusAlways, function(response) {  
+    console.log("Successfully set the authorization status.""); 
 }, function(error){  
     console.log(error);  
 });
-```  
+```
 
 ## Running Tests
 Install cordova-paramedic `https://github.com/apache/cordova-paramedic`
