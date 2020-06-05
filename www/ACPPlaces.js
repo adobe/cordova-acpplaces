@@ -30,6 +30,13 @@ var ACPPlaces = (function() {
     ACPPlaces.ACPRegionEventTypeNone = 0;
     ACPPlaces.ACPRegionEventTypeEntry = 1;
     ACPPlaces.ACPRegionEventTypeExit = 2;
+
+    // AuthorizationStatus
+    ACPPlaces.AuthorizationStatusDenied = 0;
+    ACPPlaces.AuthorizationStatusAlways = 1;
+    ACPPlaces.AuthorizationStatusUnknown = 2;
+    ACPPlaces.AuthorizationStatusRestricted = 3;
+    ACPPlaces.AuthorizationStatusWhenInUse = 4;
 	// ===========================================================================
 	// public APIs
 	// ===========================================================================
