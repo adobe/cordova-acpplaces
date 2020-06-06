@@ -37,7 +37,7 @@ static NSString * const LOWERCASE_LONGITUDE = @"longitude";
 static NSString * const IDENTIFIER = @"Identifier";
 static NSString * const CENTER = @"center";
 static NSString * const RADIUS = @"radius";
-static NSString * const LOWERCASE_IDENTIFIER = @"identifier";
+static NSString * const REQUEST_ID = @"requestId";
 static NSString * const CIRCULAR_REGION = @"circularRegion";
 static NSString * const EMPTY_ARRAY_STRING = @"[]";
 
@@ -130,7 +130,7 @@ static NSString * const EMPTY_ARRAY_STRING = @"[]";
         CLLocationDegrees longitude = [[regionDict valueForKey:LOWERCASE_LONGITUDE] doubleValue];
         CLLocationCoordinate2D center = CLLocationCoordinate2DMake(latitude,longitude);
         NSUInteger radius = [[regionDict valueForKey:RADIUS] integerValue];
-        NSString* identifier = [geofenceDict valueForKey:LOWERCASE_IDENTIFIER];
+        NSString* identifier = [geofenceDict valueForKey:REQUEST_ID];
         CLRegion* region = [[CLCircularRegion alloc] initWithCenter:center radius:radius identifier:identifier];
         [ACPPlaces processRegionEvent:region forRegionEventType:eventType];
         CDVPluginResult* pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
