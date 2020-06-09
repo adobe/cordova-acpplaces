@@ -105,7 +105,7 @@ ACPPlaces.processGeofence(geofence, geo.transitionType, function(response) {
 ##### Set the authorization status:
 ```js
 ACPPlaces.setAuthorizationStatus(ACPPlaces.AuthorizationStatusAlways, function(response) {  
-    console.log("Successfully set the authorization status.""); 
+    console.log("Successfully set the authorization status."); 
 }, function(error){  
     console.log(error);  
 });
