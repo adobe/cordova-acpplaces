@@ -3,7 +3,7 @@
 
 [![CI](https://github.com/adobe/cordova-acpplaces/workflows/CI/badge.svg)](https://github.com/adobe/cordova-acpplaces/actions)
 [![npm](https://img.shields.io/npm/v/@adobe/cordova-acpplaces)](https://www.npmjs.com/package/@adobe/cordova-acpplaces)
-[![GitHub](https://img.shields.io/github/license/adobe/cordova-acpplaces)](https://github.com/adobe/cordova-acpplaces/blob/master/LICENSE)
+[![GitHub](https://img.shields.io/github/license/adobe/cordova-acpplaces)](https://github.com/adobe/cordova-acpplaces/blob/main/LICENSE)
 
 - [Prerequisites](#prerequisites)  
 - [Installation](#installation)
@@ -47,7 +47,7 @@ ACPPlaces.extensionVersion(function(version){
 ##### Registering the extension with ACPCore:  
 
  > Note: It is required to initialize the SDK via native code inside your AppDelegate and MainApplication for iOS and Android respectively. For more information see how to initialize [Core](https://aep-sdks.gitbook.io/docs/getting-started/get-the-sdk#2-add-initialization-code).  
-  
+
   ##### **iOS**  
 ```objective-c
 #import "ACPPlaces.h"  
@@ -98,7 +98,7 @@ ACPPlaces.getNearbyPointsOfInterest(location, limit, function(response){
 var region = {latitude:37.3309422, longitude:-121.8939077, radius:1000};
 var geofence = {requestId:"geofence_id", circularRegion:region, expirationDuration:-1};
 ACPPlaces.processGeofence(geofence, geo.transitionType, function(response) {  
-    console.log("Successfully processed geofence: ", geofence); 
+    console.log("Successfully processed geofence: ", geofence);
 }, function(error){  
     console.log(error);  
 });
@@ -106,7 +106,7 @@ ACPPlaces.processGeofence(geofence, geo.transitionType, function(response) {
 ##### Set the authorization status:
 ```js
 ACPPlaces.setAuthorizationStatus(ACPPlaces.AuthorizationStatusAlways, function(response) {  
-    console.log("Successfully set the authorization status."); 
+    console.log("Successfully set the authorization status.");
 }, function(error){  
     console.log(error);  
 });
